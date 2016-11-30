@@ -46,3 +46,10 @@ Possible future development directions, in no particular order.
 * Configuration file with similar style to Gradle or Chef
 * Automatically extract archive name from POM
 * Make the deploy features more generic and broadly applicable
+* Automatically retire a feature branch
+  * `git push feature:master`
+  * `git checkout master`
+  * `git pull`
+  * `git branch -d feature`
+  * OPTIONALLY: `git push --delete origin feature`
+* Remove hard-coding of origin remote
