@@ -6,7 +6,6 @@ class SilverDollarOptions
         project_dir: nil,
         build_file: 'silver-dollar.rb',
         readonly: false,
-        clone: false,
         auto_reset: false,
         project_list: [],
         phases: [:sync, :build, :deploy],
@@ -35,11 +34,6 @@ class SilverDollarOptions
               'Execute only certain phases (sync, build, deploy)') do |phases|
         stripped = phases.split(/,/).collect { |s| s.strip.downcase.to_sym }
         @options[:phases] = stripped.reject { |s| s.empty? }
-      end
-
-      opts.on('-c', '--clone',
-              'If a project is missing, clone it') do |clone|
-        @options[:clone] = clone
       end
 
       opts.on('-R', '--auto-reset',
@@ -90,10 +84,6 @@ class SilverDollarOptions
 
   # Validate a set of options - if the options are not valid, then
   def validate
-    if @options[:readonly] && @options[:clone]
-      raise ArgumentError.new 'Cannot ask for project cloning in read-only mode'
-    end
-
     if !@options[:project_list].empty? && @options[:readonly]
       msg = sprintf "Project list given in read-only mode: %s\n", @options[:project_list].join(' ')
       raise ArgumentError.new msg

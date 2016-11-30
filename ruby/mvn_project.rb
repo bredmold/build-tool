@@ -73,7 +73,6 @@ module Project
     def initialize(
         repository:,
         sub_project: nil,
-        clone: false,
         auto_reset: false,
         mvn_flags: nil,
         pull_branches: nil,
@@ -81,7 +80,6 @@ module Project
         local_branches: nil,
         basis_branch: nil,
         always_build: false)
-      @clone = clone
       @auto_reset = auto_reset
       @mvn_flags = mvn_flags || []
       @git_repo = GitRepository.new repository
@@ -110,9 +108,6 @@ module Project
         puts "#{@git_repo.project}: Skipping sync because of dirty fail condition"
       elsif 'upstream-fail' == @build_status
         puts "#{@git_repo.project}: Skipping sync because of upstream fail condition"
-      elsif @clone && !@git_repo.repo_exists
-        @git_repo.clone "git@scm.appleleisuregroup.com:alg/#{@git_repo.project}.git"
-        @build_status = 'clone'
       elsif !@git_repo.repo_exists
         puts "Project #{@git_repo.project} has no local repository - skipping"
         @build_status = 'missing'
@@ -392,7 +387,6 @@ module Project
         service:,
         restart: true,
         sub_project: nil,
-        clone: false,
         auto_reset: false,
         mvn_flags: nil,
         pull_branches: nil,
@@ -402,7 +396,6 @@ module Project
       super(
           repository: repository,
           sub_project: sub_project,
-          clone: clone,
           auto_reset: auto_reset,
           mvn_flags: mvn_flags,
           pull_branches: pull_branches,

@@ -161,7 +161,6 @@ def initialize_project(project_desc)
     Project::Library.new(
         repository: repo_path,
         sub_project: (project_name == repo_name) ? nil : project_name,
-        clone: $options[:clone],
         auto_reset: $options[:auto_reset],
         mvn_flags: project_desc[:mvn_flags],
         pull_branches: $pull_branches,
@@ -177,7 +176,6 @@ def initialize_project(project_desc)
         archive: project_desc[:archive],
         service: project_desc[:wlp],
         restart: project_desc[:restart],
-        clone: $options[:clone],
         auto_reset: $options[:auto_reset],
         mvn_flags: project_desc[:mvn_flags],
         pull_branches: $pull_branches,

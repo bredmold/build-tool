@@ -14,9 +14,6 @@ of your local projects and their associated branch names.
 To run a full build, try `silver-dollar -d ~/my/projects -a`. This will run a build that will not fail if you're missing
 projects locally.
 
-If you're feeling especially adventurous, you can try `silver-dollar -d ~/my/projects -c`. This will attempt to clone
-all the projects it thinks you're missing.
-
 Please be kind in evaluating the code. I used this project to learn Ruby.
 
 ## Future Plans
