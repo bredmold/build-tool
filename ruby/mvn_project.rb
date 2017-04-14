@@ -82,8 +82,8 @@ module Project
         always_build: false)
       @auto_reset = auto_reset
       @mvn_flags = mvn_flags || []
-      @git_repo = GitRepository.new repository
-      @project_path = sub_project ? "#{repository}/#{sub_project}" : repository
+      @git_repo = repository
+      @project_path = sub_project ? "#{@git_repo.repository}/#{sub_project}" : @git_repo.repository
       @state_file = File.expand_path(STATE_FILE_NAME, @project_path)
       @log_file = File.expand_path(LOG_FILE_NAME, @project_path)
       @downstream = []
@@ -93,6 +93,10 @@ module Project
       @local_branches = local_branches
       @basis_branch = basis_branch
       @always_build = always_build
+
+      if basis_branch
+        @pull_branches << basis_branch
+      end
 
       read_pom
 

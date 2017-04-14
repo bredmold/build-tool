@@ -13,9 +13,11 @@ bde_ruby = File.expand_path('ruby', bde_root)
 
 $: << bde_ruby
 
-require 'silver_dollaar_options.rb'
+require 'silver_dollar_options.rb'
 require 'stopwatch.rb'
 require 'git_repo.rb'
+require 'git_svn_repo.rb'
+require 'git_svn_repo.rb'
 require 'shell_utils.rb'
 require 'mvn_project.rb'
 
@@ -139,6 +141,23 @@ def branch_report(descs)
   end
 end
 
+def initialize_repo(desc, path)
+  repo_type = 'git'
+  if desc[:scm]
+    repo_type = desc[:scm]
+  end
+
+  case repo_type
+    when 'git'
+      GitRepository.new path
+    when 'git-svn'
+      GitSvnRepository.new path
+    else
+      puts "Unknown repository type: #{repo_type}"
+      exit 1
+  end
+end
+
 # Build a service from a service description. The service description can either be a string
 # giving the project name, or it can be a record describing the service. If it's a simple string,
 # it will be interpreted as though it were a record containing only the project name.
@@ -157,9 +176,10 @@ def initialize_project(project_desc)
   project_name = extract_project(project_desc)
   repo_name = extract_repository(project_desc)
   repo_path = File.expand_path(repo_name, $project_dir)
+  repo = initialize_repo(project_desc, repo_path)
   if project_desc[:library]
     Project::Library.new(
-        repository: repo_path,
+        repository: repo,
         sub_project: (project_name == repo_name) ? nil : project_name,
         auto_reset: $options[:auto_reset],
         mvn_flags: project_desc[:mvn_flags],
@@ -171,7 +191,7 @@ def initialize_project(project_desc)
     )
   else
     Project::Service.new(
-        repository: repo_path,
+        repository: repo,
         sub_project: (project_name == repo_name) ? nil : project_name,
         archive: project_desc[:archive],
         service: project_desc[:wlp],
