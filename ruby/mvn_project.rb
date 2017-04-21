@@ -2,15 +2,18 @@
 
 require 'rexml/document'
 require 'tsort'
+require 'xml_utils.rb'
 
 module Project
   STATE_FILE_NAME = '.silver-dollar'
   LOG_FILE_NAME = '.mvn.log'
 
   class Artifact
-    def initialize(elt)
-      @group = elt.elements.each('groupId') { |e| e }.first.text
-      @artifact = elt.elements.each('artifactId') { |e| e }.first.text
+    include XmlUtils
+
+    def initialize(elt, parent)
+      @group = element_text(elt, 'groupId', parent ? parent.group : nil)
+      @artifact = element_text(elt, 'artifactId', parent ? parent.artifact : nil)
     end
 
     attr_reader :group, :artifact
@@ -33,7 +36,7 @@ module Project
 
   class Dependency < Artifact
     def initialize(dep_elt, scope: false)
-      super(dep_elt)
+      super(dep_elt, nil)
 
       if scope.is_a? String
         @scope = scope
@@ -245,13 +248,17 @@ module Project
     def read_pom
       if @git_repo.repo_exists
         pom_file = File.expand_path('pom.xml', @git_repo.repository)
+        puts "pom_file = #{pom_file}"
         pom_doc = Document.new(File.new(pom_file))
         deps = pom_doc.elements.collect('project/dependencies/dependency') do |dep|
           Dependency.new(dep)
         end
 
+        parent_ref = nil
         pom_doc.elements.each('project/parent') do |parent|
-          deps << Dependency.new(parent, scope: 'parent')
+          parent_ref = Dependency.new(parent, scope: 'parent')
+          deps << parent_ref
+          puts "parent #{parent_ref}"
         end
 
         @upstream = deps.select do |dep|
@@ -259,9 +266,10 @@ module Project
         end
 
         project_elt = pom_doc.elements.each('project') { |e| e }.first
-        @artifact = Artifact.new(project_elt)
+        @artifact = Artifact.new(project_elt, parent_ref)
 
         @build_status = 'pom'
+        STDOUT.flush
       end
     end
 
