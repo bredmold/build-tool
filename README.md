@@ -53,3 +53,4 @@ Possible future development directions, in no particular order.
   * `git branch -d feature`
   * OPTIONALLY: `git push --delete origin feature`
 * Remove hard-coding of origin remote
+* Improved git-svn support
