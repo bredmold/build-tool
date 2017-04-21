@@ -141,9 +141,36 @@ def branch_report(descs)
   end
 end
 
+def guess_git_repo_type(dot_git)
+  git_svn = false
+  config = File.expand_path('config', dot_git)
+  File.open(config) do |config_file|
+    config_file.each_line do |config_line|
+      if config_line =~ /^\[svn-remote "\S+"\]$/
+        git_svn = true
+      end
+    end
+  end
+  git_svn ? 'git-svn' : 'git'
+end
+
+def guess_repo_type(path)
+  dot_git = File.expand_path('.git', path)
+  dot_svn = File.expand_path('.svn', path)
+
+  if File.exists? dot_git
+    guess_git_repo_type(dot_git)
+  elsif File.exists? dot_svn
+    'svn'
+  else
+    'none'
+  end
+end
+
 def initialize_repo(desc, path)
-  repo_type = 'git'
+  repo_type = guess_repo_type(path)
   if desc[:scm]
+    puts "Over-riding repo type #{repo_type} with config value #{desc[:scm]} for #{path}"
     repo_type = desc[:scm]
   end
 
@@ -152,8 +179,11 @@ def initialize_repo(desc, path)
       GitRepository.new path
     when 'git-svn'
       GitSvnRepository.new path
+    when 'none'
+      puts "No .git or .svn folder was found under #{path}"
+      exit 1
     else
-      puts "Unknown repository type: #{repo_type}"
+      puts "Don't know how to handle #{repo_type} at #{path}"
       exit 1
   end
 end
@@ -212,6 +242,7 @@ def build_the_world(descs)
 
   p_list = descs.collect { |d| initialize_project(d) }
   p_list = p_list.select { |p| $options[:project_list].empty? || $options[:project_list].include?(p.project) }
+  STDOUT.flush
 
   projects = Project::ProjectSet.new(p_list)
   if projects.empty?

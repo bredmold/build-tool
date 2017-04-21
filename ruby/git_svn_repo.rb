@@ -8,14 +8,16 @@ class GitSvnRepository < GitRepository
   end
 
   def pull
-    puts "git-svn rebase #{@repository}"
+    puts "git svn rebase #{@repository}"
+    STDOUT.flush
     Dir.chdir @repository
     system 'git svn rebase'
     verify_status($?, 'git svn rebase')
   end
 
   def fetch(remote)
-    puts "git-svn fetch #{@project}"
+    puts "git svn fetch #{@project}"
+    STDOUT.flush
     Dir.chdir @repository
     system('git', 'svn', 'rebase')
     verify_status($?, 'git svn fetch')

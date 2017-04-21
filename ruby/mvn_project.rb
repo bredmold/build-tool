@@ -103,7 +103,7 @@ module Project
 
       read_pom
 
-      @bad_sync_states = %w(dirty-fail upstream-fail missing bad-branch)
+      @bad_sync_states = %w(dirty-fail upstream-fail missing bad-branch dirty)
     end
 
     attr_reader :upstream, :build_status, :artifact, :project_path
@@ -119,18 +119,21 @@ module Project
         puts "Project #{@git_repo.project} has no local repository - skipping"
         @build_status = 'missing'
       elsif is_pull_branch
-        verify_clean_workspace
-        @git_repo.pull
-        @build_status = 'pull'
+        if verify_clean_workspace
+          @git_repo.pull
+          @build_status = 'pull'
+        end
       elsif is_rebase_branch
-        verify_clean_workspace
-        @git_repo.fetch 'origin'
-        @git_repo.rebase "origin/#{@basis_branch}"
-        @build_status = 'rebase'
+        if verify_clean_workspace
+          @git_repo.fetch 'origin'
+          @git_repo.rebase "origin/#{@basis_branch}"
+          @build_status = 'rebase'
+        end
       elsif is_local_branch && @auto_reset
-        verify_clean_workspace
-        puts "Skipping sync for #{@git_repo.project} on project branch #{@branch}"
-        @build_status = 'local'
+        if verify_clean_workspace
+          puts "Skipping sync for #{@git_repo.project} on project branch #{@branch}"
+          @build_status = 'local'
+        end
       elsif is_local_branch
         puts "Skipping sync for #{@git_repo.project} on project branch #{@branch}"
         @build_status = 'local'
@@ -248,7 +251,6 @@ module Project
     def read_pom
       if @git_repo.repo_exists
         pom_file = File.expand_path('pom.xml', @git_repo.repository)
-        puts "pom_file = #{pom_file}"
         pom_doc = Document.new(File.new(pom_file))
         deps = pom_doc.elements.collect('project/dependencies/dependency') do |dep|
           Dependency.new(dep)
@@ -258,7 +260,6 @@ module Project
         pom_doc.elements.each('project/parent') do |parent|
           parent_ref = Dependency.new(parent, scope: 'parent')
           deps << parent_ref
-          puts "parent #{parent_ref}"
         end
 
         @upstream = deps.select do |dep|
@@ -269,7 +270,6 @@ module Project
         @artifact = Artifact.new(project_elt, parent_ref)
 
         @build_status = 'pom'
-        STDOUT.flush
       end
     end
 
@@ -374,20 +374,23 @@ module Project
       Dir.chdir(@git_repo.repository)
     end
 
-    # Fails if the workspace is not clean
+    # Returns false if the workspace is not clean
     def verify_clean_workspace
+      is_clean = true
       file_lines = @git_repo.status
       unless file_lines.empty?
         puts "Workspace #{@git_repo.repository} is not clean:"
         files = file_lines.collect do |line|
-          line =~ /^.*:\s+(\S+)/
+          line =~ /^...(\S+)/
           $1
         end
         files.sort.uniq.each do |line|
           puts "\t#{line}"
         end
-        exit 1
+        @build_status = 'dirty'
+        is_clean = false
       end
+      is_clean
     end
   end
 
